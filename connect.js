@@ -6,10 +6,10 @@ const { dbUrl } = config;
 
 const client = new MongoClient(config.dbUrl);
 
-async function connect() {
+async function connect() { //la conexión con la base de datos.
   try {
     await client.connect();
-    const db = client.db('burgerqueen'); // Reemplaza <NOMBRE_DB> por el nombre del db
+    const db = client.db('burgerqueen'); 
     console.log('conectado');
     return db;
   } catch (error) {
