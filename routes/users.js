@@ -22,13 +22,13 @@ const initAdminUser = async (app, next) => {
       const adminUser = {
         email: adminEmail,
         password: bcrypt.hashSync(adminPassword, 10),
-        roles: "admin",
+        role: "admin",
       };
 
       await adminCollection.insertOne(adminUser); // If it doesn't exist, it needs to be saved
       //console.log("usuario admin creado con éxito");
     } else {
-      console.log("ya existe un usuario admin en la base creada", adminExists);
+      //console.log("ya existe un usuario admin en la base creada", adminExists);
     }
   } catch (error) {
     console.error("Error al inicializar el usuario administrador:", error);
