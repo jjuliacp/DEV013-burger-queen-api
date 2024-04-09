@@ -31,7 +31,7 @@ module.exports = (app, nextMain) => {
           });
       } else {
         // If they match, send an access token created with JWT
-        const token = jwt.sign({id: user._id,  email, role }, secret); // Genera el token JWT con el correo electrónico del usuario
+        const token = jwt.sign({id: user._id,  email, role: user.role }, secret); // Genera el token JWT con el correo electrónico del usuario
      
         // Envía el token JWT al cliente como respuesta
         resp.status(200).json({id: user._id, email, role, token });

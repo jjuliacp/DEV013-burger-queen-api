@@ -20,10 +20,12 @@ module.exports = (secret) => (req, resp, next) => {
       console.error("Error verify JWT token:", err);
       return next(403);
     } // TODO: Verify user identity using `decodeToken.uid`
-    console.log("Token JWT decodificado:", decodedToken);
+   // console.log("Token JWT verificado entro al verify");
+    //console.log("Token JWT decodificado:", decodedToken);
     req.user = decodedToken.id; // Almacena el ID del usuario en req.user
    
     req.role = decodedToken.role
+    //console.log(typeof(req.role));
     next()
   });
 };
@@ -39,8 +41,8 @@ module.exports.isAuthenticated = (req) => {
 
 module.exports.isAdmin = (req) => {
   // TODO: Decide based on the request information whether the user is an admin
-  if (req.role === "admin") {
-    console.log('tiene el role de admin', req.role)
+  if (req.user &&  req.role === "admin") {
+    //console.log('tiene el role de admin')
     return true;
   } else return false;
 };

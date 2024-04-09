@@ -2,7 +2,7 @@ const bcrypt = require("bcrypt"); //función de comparación segura bcrypt.compa
 
 const { requireAuth, requireAdmin } = require("../middleware/auth");
 
-const { getUsers } = require("../controller/users");
+const { getUsers, updateUser, deleteUser, createUser, getUsersId } = require("../controller/users");
 const { connect } = require("../connect");
 
 const initAdminUser = async (app, next) => {
@@ -95,15 +95,13 @@ const initAdminUser = async (app, next) => {
 module.exports = (app, next) => {
   app.get("/users", requireAdmin, getUsers);
 
-  app.get("/users/:uid", requireAuth, (req, resp) => {});
+  app.get("/users/:uid", requireAuth, getUsersId);
 
-  app.post("/users", requireAdmin, (req, resp, next) => {
-    // TODO: Implement the route to add new users
-  });
+  app.post("/users", requireAdmin, createUser);
 
-  app.put("/users/:uid", requireAuth, (req, resp, next) => {});
+  app.put("/users/:uid", requireAuth, updateUser);
 
-  app.delete("/users/:uid", requireAuth, (req, resp, next) => {});
+  app.delete("/users/:uid", requireAuth, deleteUser);
 
   initAdminUser(app, next);
 };

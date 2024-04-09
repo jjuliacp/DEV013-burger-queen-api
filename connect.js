@@ -10,7 +10,7 @@ async function connect() { //la conexión con la base de datos.
   try {
     await client.connect();
     const db = client.db('burgerqueen'); 
-    console.log('conectado');
+   // console.log('conectado');
     return db;
   } catch (error) {
     console.error(error);//
