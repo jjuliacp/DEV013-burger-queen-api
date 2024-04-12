@@ -38,7 +38,7 @@ module.exports = (app, nextMain) => {
          //console.log("id del usuario",  user._id);
       }
     } catch (error) {
-      console.error("Error durante la autenticación:", error);
+      //console.error("Error durante la autenticación:", error);
       return resp.status(500).json({ error: "Error durante la autenticación" });
     }
   });

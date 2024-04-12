@@ -4,20 +4,20 @@ module.exports = (secret) => (req, resp, next) => {
   const { authorization } = req.headers; // Extrae el encabezado de autorización de la solicitud HTTP.
 
   if (!authorization) {
-    console.log("No se recibió token de autorización");
+   // console.log("No se recibió token de autorización");
     return next();
   }
 
   const [type, token] = authorization.split(" ");
 
   if (type.toLowerCase() !== "bearer") {
-    console.log("El tipo de token no es Bearer");
+   // console.log("El tipo de token no es Bearer");
     return next();
   }
 
   jwt.verify(token, secret, (err, decodedToken) => {
     if (err) {
-      console.error("Error verify JWT token:", err);
+      //console.error("Error verify JWT token:", err);
       return next(403);
     } // TODO: Verify user identity using `decodeToken.uid`
    // console.log("Token JWT verificado entro al verify");
