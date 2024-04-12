@@ -8,7 +8,6 @@ const isValidEmail = (email) => {
   return emailRegex.test(email);
 };
 
- 
 module.exports = {
   getUsers: async (req, resp, next) => {
     // GET
@@ -70,12 +69,10 @@ module.exports = {
       // Verificar la autorización
       // Verificar si el usuario autenticado es administrador
       if (!isAdmin(req)) {
-        return res
-          .status(403)
-          .json({
-            error:
-              "No tienes permisos de administrador para realizar esta acción",
-          });
+        return res.status(403).json({
+          error:
+            "No tienes permisos de administrador para realizar esta acción",
+        });
       }
       //Determinar el campo de búsqueda basado en si el uid es un ObjectId válido
       const query = ObjectId.isValid(uid)
@@ -125,7 +122,7 @@ module.exports = {
       // Verificar la fortaleza de la contraseña
       if (password.length < 5) {
         return res.status(400).send("password: mínimo 8 caracteres");
-      };
+      }
 
       // Antes hay que encriptarla antes de almacenarla en la base de datos
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -154,7 +151,21 @@ module.exports = {
       const db = await connect();
       const usersCollection = db.collection("users");
       const { uid } = req.params; // extraer el id
-      const { email, password } = req.body; // actualizar con la data del req.body ↓
+
+      const { email, password, role } = req.body; // actualizar con la data del req.body ↓
+
+      // Verificar si el usuario autenticado es administrador
+      if (!isAdmin(req)) {
+        return res.status(403).json({
+          error:
+            "No tienes permisos de administrador para realizar esta acción",
+        });
+      }
+    // Verificar si el ID de usuario es válido
+    if (!ObjectId.isValid(uid)) {
+      return res.status(400).json({ error: "ID de usuario inválido" });
+  }
+
       // Buscar el usuario por su ID
       const userToUpdate = await usersCollection.findOne({
         _id: new ObjectId(uid), // newObjectid asegura que el valor de uid se convierta en un objeto ObjectId válido.
@@ -164,7 +175,12 @@ module.exports = {
       if (!userToUpdate) {
         return res.status(404).json({ error: "Usuario no encontrado" });
       }
-
+      // Verificar si se proporcionaron datos para actualizar
+      if (!email && !password && !role) {
+        return res
+          .status(400)
+          .json({ error: "No se proporcionaron datos para actualizar" });
+      }
       // Actualizar los campos del usuario
       const updateFields = {};
       if (email) {
