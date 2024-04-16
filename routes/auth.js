@@ -20,22 +20,27 @@ module.exports = (app, nextMain) => {
       const adminCollection = db.collection("users");
       const user = await adminCollection.findOne({ email: email }); // match a user in the database
       //console.log("usuario", user);
+      // Validar si se encontró un usuario con el email proporcionado
+      if (!user) {
+        return resp.status(404).json({ error: "Credentials don't match" });
+      }
       // Comparar la contraseña proporcionada con la contraseña encriptada que esta almacenada en la base de datos
       const passwordMatch = await bcrypt.compare(password, user.password);
       //console.log(password, user.password);
-      if (!passwordMatch || !user) {
-        return resp
-          .status(401)
-          .json({
-            error: "El correo electrónico y/o la contraseña no son válidas ",
-          });
+      if (!passwordMatch ) {
+        return resp.status(401).json({
+          error: "La contraseña no es válida  ",
+        });
       } else {
         // If they match, send an access token created with JWT
-        const token = jwt.sign({id: user._id,  email, role: user.role }, secret); // Genera el token JWT con el correo electrónico del usuario
-     
+        const token = jwt.sign(
+          { id: user._id, email, role: user.role },
+          secret
+        ); // Genera el token JWT con el correo electrónico del usuario
+
         // Envía el token JWT al cliente como respuesta
-        resp.status(200).json({id: user._id, email, role, token });
-         //console.log("id del usuario",  user._id);
+        resp.status(200).json({ id: user._id, email, role, token });
+        //console.log("id del usuario",  user._id);
       }
     } catch (error) {
       //console.error("Error durante la autenticación:", error);

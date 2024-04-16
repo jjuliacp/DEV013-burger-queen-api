@@ -46,35 +46,17 @@ module.exports = {
       const db = await connect(); // Conexión a la base de datos
       const usersdb = db.collection("users");
       const { uid } = req.params;
-
-      //console.log(uid); // Id del parámetro de la URL
-      // // Verificar si el ID es válido
-      // if (!ObjectId.isValid(uid)) {
-      //   return resp.status(400).json({ error: "ID de usuario inválido" });
-      // }
-      // Convierte la cadena hexadecimal a ObjectId
-      //  const objectIdUid = new ObjectId(uid);
-      // Busca el usuario por su ObjectId utilizando findOne
-      //  const userFound = await usersdb.findOne({ _id: objectIdUid });
-      // Determinar el campo de búsqueda basado en si el uid es un ObjectId válido
-      // let query;
-      // if (ObjectId.isValid(uid)) {
-      //   query = { _id: new ObjectId(uid) };
-      // } else {
-      //   query = { email: uid };
-      // }
-
-      // Buscar al usuario en la base de datos utilizando el campo de búsqueda determinado
-      // const userFound = await usersdb.findOne(query);
-      // Verificar la autorización
-      // Verificar si el usuario autenticado es administrador
-      if (!isAdmin(req)) {
-        return res.status(403).json({
+      console.log("con lo que busca", uid);
+      console.log("Usuario autenticado: la info", req.user);
+      console.log("Correo electrónico de la info", req.user.id);
+      // Verificar si el usuario autenticado es administrador o es el mismo usuario own
+      if (!isAdmin(req) && uid !== req.user.id && uid !== req.user.email) {
+        return resp.status(403).json({
           error:
             "No tienes permisos de administrador para realizar esta acción",
         });
       }
-      //Determinar el campo de búsqueda basado en si el uid es un ObjectId válido
+
       const query = ObjectId.isValid(uid)
         ? { _id: new ObjectId(uid) }
         : { email: uid };
@@ -90,7 +72,9 @@ module.exports = {
       }
 
       //console.log(userFound);
-      resp.status(200).json({ user: userFound, message: "Operación exitosa" }); // Envía el usuario encontrado como respuesta JSON junto con un mensaje
+      resp.status(200).json({ user: userFound, message: "Operación exitosa" });
+
+      // Envía el usuario encontrado como respuesta JSON junto con un mensaje
     } catch (error) {
       // Manejo de errores
       //console.error("Error al buscar el usuario:", error);
@@ -148,12 +132,6 @@ module.exports = {
   updateUser: async (req, res, next) => {
     // PUT
     try {
-      const db = await connect();
-      const usersCollection = db.collection("users");
-      const { uid } = req.params; // extraer el id
-
-      const { email, password, role } = req.body; // actualizar con la data del req.body ↓
-
       // Verificar si el usuario autenticado es administrador
       if (!isAdmin(req)) {
         return res.status(403).json({
@@ -161,26 +139,43 @@ module.exports = {
             "No tienes permisos de administrador para realizar esta acción",
         });
       }
-    // Verificar si el ID de usuario es válido
-    if (!ObjectId.isValid(uid)) {
-      return res.status(400).json({ error: "ID de usuario inválido" });
-  }
+      const db = await connect();
+      const usersCollection = db.collection("users");
+      const { uid } = req.params; // extraer el id
 
-      // Buscar el usuario por su ID
-      const userToUpdate = await usersCollection.findOne({
-        _id: new ObjectId(uid), // newObjectid asegura que el valor de uid se convierta en un objeto ObjectId válido.
-      });
+      //Determinar el campo de búsqueda basado en si el uid es un ObjectId válido
+      let query;
+      if (ObjectId.isValid(uid)) {
+        query = { _id: new ObjectId(uid) };
+      } else {
+        query = { email: uid };
+      }
+
+      // // Buscar el usuario por su ID
+      // const userToUpdate = await usersCollection.findOne({
+      //   _id: new ObjectId(uid), // newObjectid asegura que el valor de uid se convierta en un objeto ObjectId válido.
+      // });
+      //  console.log("Query:", query);
+      const userToUpdate = await usersCollection.findOne(query);
 
       // Verificar si se encontró el usuario
-      if (!userToUpdate) {
+      if (userToUpdate) {
+        console.log(userToUpdate.email);
+      } else {
+        // console.log("Usuario no encontrado");
         return res.status(404).json({ error: "Usuario no encontrado" });
       }
+
+      const { email, password } = req.body; // actualizar con la data del req.body ↓
       // Verificar si se proporcionaron datos para actualizar
-      if (!email && !password && !role) {
-        return res
-          .status(400)
-          .json({ error: "No se proporcionaron datos para actualizar" });
+      if (!email && !password) {
+        console.log("entra al error 400");
+        return res.status(400).json({
+          error:
+            "Se requiere al menos un campo para actualizar: email y/o contraseña",
+        });
       }
+
       // Actualizar los campos del usuario
       const updateFields = {};
       if (email) {
@@ -192,7 +187,7 @@ module.exports = {
       }
 
       await usersCollection.updateOne(
-        { _id: new ObjectId(uid) }, //Filtro: busca el usuario por su ID
+        query, //Filtro: busca el usuario por su ID
         { $set: updateFields } // actualiza
       );
 
@@ -209,22 +204,33 @@ module.exports = {
       const db = await connect();
       const usersCollection = db.collection("users");
       const { uid } = req.params;
-      // Verificar si el token de autenticación no es de una usuario administradora o no es de la misma usuaria que corresponde al parametro uid
-      if (req.user !== uid) {
-        //console.log(req.user, uid);
-        return res
-          .status(403)
-          .json({ error: "No tienes permisos para actualizar este usuario" });
-      }
-      const userToUpdate = await usersCollection.findOne({
-        _id: new ObjectId(uid), // newObjectid asegura que el valor de uid se convierta en un objeto ObjectId válido.
-      });
 
-      // Verificar si se encontró el usuario
-      if (!userToUpdate) {
+      // Verificar si el token de autenticación no es de una usuario administradora o no es de la misma usuaria que corresponde al parametro uid
+      if (!isAdmin(req)) {
+        return res.status(403).json({
+          error:
+            "No tienes permisos de administrador para realizar esta acción",
+        });
+      }
+
+      //Determinar el campo de búsqueda basado en si el uid es un ObjectId válido
+      let query;
+      if (ObjectId.isValid(uid)) {
+        query = { _id: new ObjectId(uid) };
+      } else if (isValidEmail(uid)) {
+        query = { email: uid };
+      } else {
+        return res.status(400).json({ error: "ID de usuario inválido" });
+      }
+
+      const userToDelete = await usersCollection.findOne(query); // newObjectid asegura que el valor de uid se convierta en un objeto ObjectId válido.
+
+      if (!userToDelete) {
         return res.status(404).json({ error: "Usuario no encontrado" });
       }
-      await usersCollection.deleteOne(userToUpdate);
+      // Verificar si se encontró el usuario
+      await usersCollection.deleteOne(userToDelete);
+
       res
         .status(200)
         .json({ message: "el usuario a sido eliminado exitosamente" });
