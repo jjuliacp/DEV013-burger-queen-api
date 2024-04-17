@@ -22,8 +22,7 @@ module.exports = (secret) => (req, resp, next) => {
     } // TODO: Verify user identity using `decodeToken.uid`
    // console.log("Token JWT verificado entro al verify");
     //console.log("Token JWT decodificado:", decodedToken);
-    req.user = decodedToken.id; // Almacena el ID del usuario en req.user
-   
+    req.user = decodedToken; // Almacena el ID del usuario en req.user
     req.role = decodedToken.role
     //console.log(typeof(req.role));
     next()
