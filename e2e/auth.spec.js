@@ -41,7 +41,7 @@ describe('POST /login', () => {
         expect(resp.status).toBe(200);
         return resp.json();
       })
-      .then(({ accessToken }) => fetchWithAuth(accessToken)(`/users/${config.adminEmail}`))
+      .then(({ token }) => fetchWithAuth(token)(`/users/${config.adminEmail}`))
       .then((resp) => {
         expect(resp.status).toBe(200);
         return resp.json();

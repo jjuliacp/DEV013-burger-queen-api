@@ -46,9 +46,9 @@ module.exports = {
       const db = await connect(); // Conexión a la base de datos
       const usersdb = db.collection("users");
       const { uid } = req.params;
-      console.log("con lo que busca", uid);
-      console.log("Usuario autenticado: la info", req.user);
-      console.log("Correo electrónico de la info", req.user.id);
+      // console.log("con lo que busca", uid);
+      // console.log("Usuario autenticado: la info", req.user);
+      // console.log("Correo electrónico de la info", req.user.id);
       // Verificar si el usuario autenticado es administrador o es el mismo usuario own
       if (!isAdmin(req) && uid !== req.user.id && uid !== req.user.email) {
         return resp.status(403).json({
@@ -72,7 +72,7 @@ module.exports = {
       }
 
       //console.log(userFound);
-      resp.status(200).json({ user: userFound, message: "Operación exitosa" });
+      resp.status(200).json({ email: userFound.email });
 
       // Envía el usuario encontrado como respuesta JSON junto con un mensaje
     } catch (error) {
@@ -132,17 +132,17 @@ module.exports = {
   updateUser: async (req, res, next) => {
     // PUT
     try {
-      // Verificar si el usuario autenticado es administrador
-      if (!isAdmin(req)) {
+      const db = await connect();
+      const usersCollection = db.collection("users");
+      const { uid } = req.params; // extraer el id
+
+      // Verificar si el usuario autenticado es administrador o el dueño
+      if (!isAdmin(req) && uid !== req.user.id && uid !== req.user.email) {
         return res.status(403).json({
           error:
             "No tienes permisos de administrador para realizar esta acción",
         });
       }
-      const db = await connect();
-      const usersCollection = db.collection("users");
-      const { uid } = req.params; // extraer el id
-
       //Determinar el campo de búsqueda basado en si el uid es un ObjectId válido
       let query;
       if (ObjectId.isValid(uid)) {
@@ -160,22 +160,21 @@ module.exports = {
 
       // Verificar si se encontró el usuario
       if (userToUpdate) {
-        console.log(userToUpdate.email);
+        //console.log(userToUpdate.email);
       } else {
         // console.log("Usuario no encontrado");
         return res.status(404).json({ error: "Usuario no encontrado" });
       }
 
-      const { email, password } = req.body; // actualizar con la data del req.body ↓
+      const { email, password, role } = req.body; // actualizar con la data del req.body ↓
       // Verificar si se proporcionaron datos para actualizar
-      if (!email && !password) {
+      if (!email && !password && !role ) {
         console.log("entra al error 400");
         return res.status(400).json({
           error:
             "Se requiere al menos un campo para actualizar: email y/o contraseña",
         });
       }
-
       // Actualizar los campos del usuario
       const updateFields = {};
       if (email) {
@@ -185,12 +184,17 @@ module.exports = {
         const hashedPassword = await bcrypt.hash(password, 10);
         updateFields.password = hashedPassword;
       }
-
+      
+      // Si el usuario autenticado no es administrador, no puede cambiar el rol de otro usuario
+      if (!isAdmin(req) && role) {
+        return res
+          .status(403)
+          .json({ error: "No tienes permisos para cambiar el rol" });
+      }
       await usersCollection.updateOne(
         query, //Filtro: busca el usuario por su ID
         { $set: updateFields } // actualiza
       );
-
       res.status(200).json({ message: "Usuario actualizado exitosamente" });
     } catch (error) {
       next(error);
